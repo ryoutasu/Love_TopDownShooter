@@ -24,6 +24,7 @@ function Weapon:init(player, name, camera)
     -- self.oy = self.holding_point.y
     self.ox = -5
     self.oy = self.h/2
+    self.r = 0
     self.isFiring = false
 
     self.cooldownTime = 0

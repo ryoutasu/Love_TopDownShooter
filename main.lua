@@ -1,10 +1,13 @@
 Class = require 'lib.class'
 Gamestate = require 'lib.gamestate'
 Camera = require 'lib.gamera'
+Urutora = require 'lib.urutora'
 
 DEBUG = false
 
-local mainmenu = require 'src.states.mainmenu'
+mainmenu = require 'src.states.mainmenu'
+game = require 'src.states.game'
+editor = require 'src.states.mapeditor'
 
 function love.load()
     love.graphics.setDefaultFilter( 'nearest', 'nearest' )

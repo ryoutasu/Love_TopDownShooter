@@ -83,4 +83,9 @@ function UI:draw()
     end
 end
 
+function UI:mousepressed( x, y, button, istouch, presses ) end
+function UI:mousereleased( x, y, button, istouch, presses ) end
+function UI:wheelmoved( x, y ) end
+function UI:keypressed( key ) end
+
 return UI

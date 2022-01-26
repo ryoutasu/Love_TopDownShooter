@@ -102,6 +102,7 @@ function GameState:mousepressed( x, y, button, istouch, presses )
     if button == 1 then
         self.player:startFire(true)
     end
+    self.UI:mousepressed(x, y, button)
 end
 
 function GameState:mousereleased( x, y, button, istouch, presses )
@@ -117,6 +118,7 @@ function GameState:wheelmoved( x, y )
     elseif y < 0 then
         self.player:nextWeapon(true)
     end
+    self.UI:wheelmoved(x, y)
 end
 
 function GameState:keypressed( key )
@@ -127,9 +129,10 @@ function GameState:keypressed( key )
         self.player:reload()
     elseif key == 'tab' then
         self.UI.showMinimap = not self.UI.showMinimap
-    -- elseif key == 'escape' then
-    --     Gamestate.pop()
+    elseif key == 'escape' then
+        Gamestate.switch(mainmenu)
     end
+    self.UI:keypressed(key)
 end
 
 return GameState

@@ -5,8 +5,6 @@ local vector = require 'lib.vector'
 local Objects = require 'src.objects'
 local UI = require 'src.editorui'
 
-local ObjectList = {}
-
 local MapEditorState = {}
 
 function MapEditorState:init()
@@ -21,6 +19,8 @@ function MapEditorState:init()
     self.veiwpoint = vector(400, 300)
 
     self.UI = UI(self)
+    self.objectList = Objects
+    self.selectedObject = 1
 end
 
 function MapEditorState:enter()
@@ -87,7 +87,7 @@ function MapEditorState:draw()
     self.camera:draw(function (x,y,w,h)
         self:drawWorld()
         local items, len = self.world:queryRect(x, y, w, h)
-        table.sort(items, self.drawOrder)
+        table.sort(items, drawOrder)
 
         for _, item in ipairs(items) do
             item:draw()
@@ -97,13 +97,31 @@ function MapEditorState:draw()
     self.UI:draw()
 end
 
-function MapEditorState:mousepressed(button)
+function MapEditorState:mousepressed( x, y, button, istouch, presses )
+    local cx, cy = self.camera:toWorld(x, y)
     if button == 1 then
-        
+        print('btn clck')
+        self.objectList[self.selectedObject].call(self.world, cx, cy, 100, 100)
     end
+    self.UI:mousepressed(x, y, button, istouch, presses)
 end
 
-function MapEditorState:keypressed(key)
+function MapEditorState:wheelmoved( x, y )
+    if y > 0 then
+        self.selectedObject = self.selectedObject - 1
+        if self.selectedObject < 1 then
+            self.selectedObject = #self.objectList
+        end
+    elseif y < 0 then
+        self.selectedObject = self.selectedObject + 1
+        if self.selectedObject > #self.objectList then
+            self.selectedObject = 1
+        end
+    end
+    self.UI:wheelmoved(x, y)
+end
+
+function MapEditorState:keypressed( key )
     if key == 'kp6' then
         self.width = self.width + 100
     elseif key == 'kp2' then
@@ -121,6 +139,7 @@ function MapEditorState:keypressed(key)
     -- elseif key == 'escape' then
     --     Gamestate.pop()
     end
+    self.UI:keypressed(key)
 end
 
 return MapEditorState
