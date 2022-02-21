@@ -11,11 +11,11 @@ local INACTIVE_WEAPON_ICON_COLOR = { 0.7, 0.7, 0.7, 0.7 }
 
 local minimapScale = 0.2
 
-function UI:init(gamestate, player)
-    self.gamestate = gamestate
-    self.player = player
+function UI:init(map)
+    self.map = map
+    self.player = map.player
 
-    local minimap = gamera.new(0,0,gamestate.width,gamestate.height)
+    local minimap = gamera.new(0,0,map.width,map.height)
     minimap:setWindow(575, 25, 200, 200)
     minimap:setScale(minimapScale)
 
@@ -31,7 +31,7 @@ function UI:draw()
     love.graphics.setColor(0, 0, 0, 1)
     love.graphics.print('Game state', 0, 0)
 
-    local game = self.gamestate
+    local map = self.map
     local player = self.player
     -- local health, maxHealth
     local weapons = player.weaponList
@@ -63,7 +63,7 @@ function UI:draw()
     end
 
     -- MINIMAP
-    local l,r,t,d = game.camera:getVisible()
+    local l,r,t,d = map.camera:getVisible()
     if self.showMinimap then
         self.minimap:draw(function (x,y,w,h)
             love.graphics.setColor(0.5,0.5,0.5,0.8)
@@ -73,8 +73,8 @@ function UI:draw()
             love.graphics.rectangle('line',l,r,t,d)
 
             -- game.drawWorld(0.8)
-            local items, len = game.world:queryRect(x, y, w, h)
-            table.sort(items, game.drawOrder)
+            local items, len = map.world:queryRect(x, y, w, h)
+            table.sort(items, map.drawOrder)
 
             for _, item in ipairs(items) do
                 item:drawOnMinimap(0.8)
