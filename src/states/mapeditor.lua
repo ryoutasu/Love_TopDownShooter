@@ -2,8 +2,9 @@ local gamera = require 'lib.gamera'
 local bump = require 'lib.bump'
 local vector = require 'lib.vector'
 
-local Objects = require 'src.objects'
 local UI = require 'src.editorui'
+
+local objectListPath = 'resources/objectList.lua'
 
 local MapEditorState = {}
 
@@ -19,12 +20,60 @@ function MapEditorState:init()
     self.veiwpoint = vector(400, 300)
 
     self.UI = UI(self)
-    self.objectList = Objects
-    self.selectedObject = 1
+    self.urutora = Urutora:new()
+end
+
+function MapEditorState:loadObjectList()
+    if self.panel then
+        self.urutora:remove(self.panel)
+        self.urutora:remove(self.slider)
+    end
+    local list = love.filesystem.load(objectListPath)()
+
+    local x = love.graphics.getWidth() - 200
+    local y = love.graphics.getHeight() /2
+    local panel = Urutora.panel({
+        x = x, y = y,
+        w = list.w, h = list.h,
+        rows = list.rows, cols = 1, csy = list.csy
+    })
+    
+    for key, value in ipairs(list) do
+        local item = Urutora.button({
+            text = value.name,
+            w = 200, h = 30
+        })
+        item.call = value.call
+        item:action(function(e)
+            if self.selected then
+                self.selected:enable()
+            end
+            item:disable()
+            self.selected = item
+        end)
+        panel:addAt(key, 1, item)
+    end
+
+    x = x + list.w + 10
+    local slider = Urutora.slider({
+        x = x, y = y,
+        w = 20, h = list.h,
+        value = 0, axis = 'y'
+    }):action(function(e)
+        panel:setScrollY(e.target.value)
+    end)
+
+    self.urutora:add(panel)
+    self.urutora:add(slider)
+
+    self.panel = panel
+    self.slider = slider
+    self.selected = nil
 end
 
 function MapEditorState:enter()
     love.graphics.setBackgroundColor(1, 1, 1, 1)
+    self:loadObjectList()
 end
 
 function MapEditorState:update(dt)
@@ -62,6 +111,7 @@ function MapEditorState:update(dt)
 
     self.camera:setPosition(veiwpoint:unpack())
     self.UI:update(dt)
+    self.urutora:update(dt)
 end
 
 local tileWidth = 100
@@ -95,30 +145,44 @@ function MapEditorState:draw()
     end)
 
     self.UI:draw()
+    self.urutora:draw()
 end
 
 function MapEditorState:mousepressed( x, y, button, istouch, presses )
     local cx, cy = self.camera:toWorld(x, y)
     if button == 1 then
-        print('btn clck')
-        self.objectList[self.selectedObject].call(self.world, cx, cy, 100, 100)
+        local insidenode = false
+        for index, node in ipairs(self.urutora.nodes) do
+            if node:pointInsideNode(x, y) then
+                insidenode = true
+            end
+        end
+        
+        if self.selected and not insidenode then
+            self.selected.call(self.world, cx, cy, 100, 100)
+        end
     end
-    self.UI:mousepressed(x, y, button, istouch, presses)
+    -- self.UI:mousepressed(x, y, button, istouch, presses)
+    self.urutora:pressed(x, y, button, istouch, presses)
 end
 
+function MapEditorState:mousereleased(x, y, button) self.urutora:released(x, y) end
+function MapEditorState:mousemoved(x, y, dx, dy) self.urutora:moved(x, y, dx, dy) end
+
 function MapEditorState:wheelmoved( x, y )
-    if y > 0 then
-        self.selectedObject = self.selectedObject - 1
-        if self.selectedObject < 1 then
-            self.selectedObject = #self.objectList
-        end
-    elseif y < 0 then
-        self.selectedObject = self.selectedObject + 1
-        if self.selectedObject > #self.objectList then
-            self.selectedObject = 1
-        end
-    end
-    self.UI:wheelmoved(x, y)
+    -- if y > 0 then
+    --     self.selectedObject = self.selectedObject - 1
+    --     if self.selectedObject < 1 then
+    --         self.selectedObject = #self.objectList
+    --     end
+    -- elseif y < 0 then
+    --     self.selectedObject = self.selectedObject + 1
+    --     if self.selectedObject > #self.objectList then
+    --         self.selectedObject = 1
+    --     end
+    -- end
+    -- self.UI:wheelmoved(x, y)
+    self.urutora:wheelmoved(x, y)
 end
 
 function MapEditorState:keypressed( key )
@@ -138,8 +202,13 @@ function MapEditorState:keypressed( key )
         end
     -- elseif key == 'escape' then
     --     Gamestate.pop()
+    elseif key == 'r' then
+        self:loadObjectList()
     end
-    self.UI:keypressed(key)
+    -- self.UI:keypressed(key)
+    self.urutora:keypressed(key)
 end
+
+function MapEditorState:textinput(text) self.urutora:textinput(text) end
 
 return MapEditorState

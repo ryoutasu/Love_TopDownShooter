@@ -14,7 +14,7 @@ function UI:init(state)
     self.minimap:setWindow(575, 25, 200, 200)
     self.minimap:setScale(minimapScale)
 
-    self.UI = Urutora:new()
+    -- self.UI = Urutora:new()
 end
 
 function UI:update(dt)
@@ -36,20 +36,20 @@ function UI:draw()
     love.graphics.print('Height = '..self.state.height, 0, 30)
 
     -- OBJECT LIST
-    local objList = state.objectList
-    local x = love.graphics.getWidth() - 100
-    local y = love.graphics.getHeight() - PX_TO_ROW*#objList
-    local textColor
-    for i, obj in ipairs(objList) do
-        if state.selectedObject == i then
-            textColor = ACTIVE_OBJECT_TEXT_COLOR
-        else
-            textColor = INACTIVE_OBJECT_TEXT_COLOR
-        end
-        love.graphics.setColor(textColor)
-        love.graphics.print(obj.name, x, y, 0, 1.5)
-        y = y + PX_TO_ROW
-    end
+    -- local objList = state.objectList
+    -- local x = love.graphics.getWidth() - 100
+    -- local y = love.graphics.getHeight() - PX_TO_ROW*#objList
+    -- local textColor
+    -- for i, obj in ipairs(objList) do
+    --     if state.selectedObject == i then
+    --         textColor = ACTIVE_OBJECT_TEXT_COLOR
+    --     else
+    --         textColor = INACTIVE_OBJECT_TEXT_COLOR
+    --     end
+    --     love.graphics.setColor(textColor)
+    --     love.graphics.print(obj.name, x, y, 0, 1.5)
+    --     y = y + PX_TO_ROW
+    -- end
 
     -- MINIMAP
     local l,r,t,d = state.camera:getVisible()
@@ -70,11 +70,11 @@ function UI:draw()
 end
 
 
-function UI:keypressed(key, scancode, isrepeat) self.UI:keypressed(key, scancode, isrepeat) end
-function UI:mousepressed(x, y, button) self.UI:pressed(x, y) end
-function UI:mousemoved(x, y, dx, dy) self.UI:moved(x, y, dx, dy) end
-function UI:mousereleased(x, y, button) self.UI:released(x, y) end
-function UI:textinput(text) self.UI:textinput(text) end
-function UI:wheelmoved(x, y) self.UI:wheelmoved(x, y) end
+-- function UI:keypressed(key, scancode, isrepeat) self.UI:keypressed(key, scancode, isrepeat) end
+-- function UI:mousepressed(x, y, button) self.UI:pressed(x, y) end
+-- function UI:mousereleased(x, y, button) self.UI:released(x, y) end
+-- function UI:mousemoved(x, y, dx, dy) self.UI:moved(x, y, dx, dy) end
+-- function UI:textinput(text) self.UI:textinput(text) end
+-- function UI:wheelmoved(x, y) self.UI:wheelmoved(x, y) end
 
 return UI
