@@ -1,4 +1,3 @@
-local vector = require 'lib.vector'
 local MoveableObject = require 'src.objects.moveableObject'
 
 local Unit = Class{}

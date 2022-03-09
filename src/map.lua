@@ -35,10 +35,6 @@ function Map:init(width, height)
     self.width, self.height = width, height
 end
 
-function Map:addObject(object)
-    self.objects[#self.objects+1] = object
-end
-
 function Map:update(dt)
     local items, len = self.world:getItems()
 
@@ -91,39 +87,6 @@ function Map:draw()
     -- local weapon = player.weaponList[player.weapon]
     -- love.graphics.setColor(0, 0, 0, 1)
     -- love.graphics.print('Wep rot: '..weapon.r, 0, 0, 0, 1, 1)
-end
-
-function Map:mousepressed( x, y, button, istouch, presses )
-    if button == 1 then
-        self.player:startFire(true)
-    end
-end
-
-function Map:mousereleased( x, y, button, istouch, presses )
-    if button == 1 then
-        self.player:startFire(false)
-    end
-end
-
-function Map:wheelmoved( x, y )
-    if y > 0 then
-        self.player:nextWeapon(false)
-    elseif y < 0 then
-        self.player:nextWeapon(true)
-    end
-end
-
-function Map:keypressed( key )
-    local numkey = tonumber(key)
-    if numkey and numkey >= 1 and numkey <= 9 then
-        self.player:changeWeapon(numkey)
-    elseif key == 'r' then
-        self.player:reload()
-    elseif key == 'tab' then
-        self.UI.showMinimap = not self.UI.showMinimap
-    elseif key == 'escape' then
-        Gamestate.switch(mainmenu)
-    end
 end
 
 return Map

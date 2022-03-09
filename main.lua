@@ -2,6 +2,7 @@ Class = require 'lib.class'
 Gamestate = require 'lib.gamestate'
 Camera = require 'lib.gamera'
 Urutora = require 'lib.urutora'
+Input = require 'lib.input'
 
 DEBUG = false
 
@@ -10,6 +11,7 @@ game = require 'src.states.game'
 editor = require 'src.states.mapeditor'
 
 function love.load()
+    Input.bind_callbacks()
     love.graphics.setDefaultFilter( 'nearest', 'nearest' )
     love.window.setTitle('Love Shooter')
     math.randomseed(os.time())

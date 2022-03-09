@@ -6,9 +6,9 @@ local UI = require 'src.editorui'
 
 local objectListPath = 'resources/objectList.lua'
 
-local MapEditorState = {}
+local MapEditor = {}
 
-function MapEditorState:init()
+function MapEditor:init()
     local width, height = 1000, 1000
     local world = bump.newWorld()
     local camera = gamera.new(0,0,1000,1000)
@@ -23,7 +23,7 @@ function MapEditorState:init()
     self.urutora = Urutora:new()
 end
 
-function MapEditorState:loadObjectList()
+function MapEditor:loadObjectList()
     if self.panel then
         self.urutora:remove(self.panel)
         self.urutora:remove(self.slider)
@@ -38,20 +38,28 @@ function MapEditorState:loadObjectList()
         rows = list.rows, cols = 1, csy = list.csy
     })
     
+    local i = 1
     for key, value in ipairs(list) do
-        local item = Urutora.button({
-            text = value.name,
-            w = 200, h = 30
-        })
-        item.call = value.call
-        item:action(function(e)
-            if self.selected then
-                self.selected:enable()
-            end
-            item:disable()
-            self.selected = item
-        end)
-        panel:addAt(key, 1, item)
+        local result, errmsg = love.filesystem.load(value.path)
+        if errmsg then
+            print('The following error happened: ' .. tostring(result))
+        else
+            local item = Urutora.button({
+                text = value.name,
+                w = 200, h = 30
+            })
+            
+            item.call = result()
+            item:action(function(e)
+                if self.selected then
+                    self.selected:enable()
+                end
+                item:disable()
+                self.selected = item
+            end)
+            panel:addAt(i, 1, item)
+            i = i + 1
+        end
     end
 
     x = x + list.w + 10
@@ -71,12 +79,26 @@ function MapEditorState:loadObjectList()
     self.selected = nil
 end
 
-function MapEditorState:enter()
+function MapEditor:save()
+    local m = {
+        width = self.width,
+        height = self.height,
+        objects = {}
+    }
+    local items, len = self.world:getItems()
+    for key, object in ipairs(items) do
+        local x, y = object.pos:unpack()
+        local o = { x = x, y = y }
+        table.insert(m.objects, o)
+    end
+end
+
+function MapEditor:enter()
     love.graphics.setBackgroundColor(1, 1, 1, 1)
     self:loadObjectList()
 end
 
-function MapEditorState:update(dt)
+function MapEditor:update(dt)
     local veiwpoint = self.veiwpoint
 
     local dx, dy = 0, 0
@@ -116,7 +138,7 @@ end
 
 local tileWidth = 100
 local tileHeight = 100
-function MapEditorState:drawWorld(alpha)
+function MapEditor:drawWorld(alpha)
     alpha = alpha or 1
     love.graphics.setColor(0.11, 0.57, 0.87, alpha)
     for i = 0, self.height-tileHeight, tileHeight*2 do
@@ -133,7 +155,7 @@ function MapEditorState:drawWorld(alpha)
     love.graphics.setColor(1, 1, 1)
 end
 
-function MapEditorState:draw()
+function MapEditor:draw()
     self.camera:draw(function (x,y,w,h)
         self:drawWorld()
         local items, len = self.world:queryRect(x, y, w, h)
@@ -148,7 +170,7 @@ function MapEditorState:draw()
     self.urutora:draw()
 end
 
-function MapEditorState:mousepressed( x, y, button, istouch, presses )
+function MapEditor:mousepressed( x, y, button, istouch, presses )
     local cx, cy = self.camera:toWorld(x, y)
     if button == 1 then
         local insidenode = false
@@ -166,26 +188,14 @@ function MapEditorState:mousepressed( x, y, button, istouch, presses )
     self.urutora:pressed(x, y, button, istouch, presses)
 end
 
-function MapEditorState:mousereleased(x, y, button) self.urutora:released(x, y) end
-function MapEditorState:mousemoved(x, y, dx, dy) self.urutora:moved(x, y, dx, dy) end
+function MapEditor:mousereleased(x, y, button) self.urutora:released(x, y) end
+function MapEditor:mousemoved(x, y, dx, dy) self.urutora:moved(x, y, dx, dy) end
 
-function MapEditorState:wheelmoved( x, y )
-    -- if y > 0 then
-    --     self.selectedObject = self.selectedObject - 1
-    --     if self.selectedObject < 1 then
-    --         self.selectedObject = #self.objectList
-    --     end
-    -- elseif y < 0 then
-    --     self.selectedObject = self.selectedObject + 1
-    --     if self.selectedObject > #self.objectList then
-    --         self.selectedObject = 1
-    --     end
-    -- end
-    -- self.UI:wheelmoved(x, y)
+function MapEditor:wheelmoved( x, y )
     self.urutora:wheelmoved(x, y)
 end
 
-function MapEditorState:keypressed( key )
+function MapEditor:keypressed( key )
     if key == 'kp6' then
         self.width = self.width + 100
     elseif key == 'kp2' then
@@ -209,6 +219,6 @@ function MapEditorState:keypressed( key )
     self.urutora:keypressed(key)
 end
 
-function MapEditorState:textinput(text) self.urutora:textinput(text) end
+function MapEditor:textinput(text) self.urutora:textinput(text) end
 
-return MapEditorState
+return MapEditor

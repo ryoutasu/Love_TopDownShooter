@@ -106,9 +106,40 @@ function Player:updateVelocityByInput(dt)
     end
 end
 
+function Player:updateInput()
+    local i = Input
+
+    if i.pressed('r') then
+        self.weaponList[self.weapon]:reload()
+    end
+
+    for k = 1, 9 do
+        if i.pressed(tostring(k)) then
+            self:changeWeapon(k)
+        end
+    end
+
+    if i.pressed('mouse1') then
+        self:startFire(true)
+    end
+    if i.released('mouse1') then
+        self:startFire(false)
+    end
+
+    local is_down, wy = i.pressed('wheely')
+    if is_down then
+        if wy > 0 then
+            self:nextWeapon(false)
+        elseif wy < 0 then
+            self:nextWeapon(true)
+        end
+    end
+end
+
 function Player:update(dt)
     self:updateVelocityByInput(dt)
     Unit.update(self, dt)
+    self:updateInput()
     self.weaponList[self.weapon]:update(dt)
 end
 
