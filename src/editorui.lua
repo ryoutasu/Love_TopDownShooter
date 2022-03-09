@@ -24,7 +24,7 @@ function UI:update(dt)
         self.minimap:setWorld(0, 0, state.width, state.height)
     end
 
-    self.minimap:setPosition(state.veiwpoint:unpack())
+    self.minimap:setPosition(state.viewpoint:unpack())
 end
 
 function UI:draw()

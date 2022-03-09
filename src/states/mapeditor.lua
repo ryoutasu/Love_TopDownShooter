@@ -8,6 +8,8 @@ local objectListPath = 'resources/objectList.lua'
 
 local MapEditor = {}
 
+local mouseMoveMode = false
+
 function MapEditor:init()
     local width, height = 1000, 1000
     local world = bump.newWorld()
@@ -17,7 +19,7 @@ function MapEditor:init()
     self.width, self.height = width, height
 
     self.world = world
-    self.veiwpoint = vector(400, 300)
+    self.viewpoint = vector(400, 300)
 
     self.UI = UI(self)
     self.urutora = Urutora:new()
@@ -27,11 +29,30 @@ function MapEditor:loadObjectList()
     if self.panel then
         self.urutora:remove(self.panel)
         self.urutora:remove(self.slider)
+        self.urutora:remove(self.refresh)
+        self.urutora:remove(self.deselect)
     end
     local list = love.filesystem.load(objectListPath)()
 
-    local x = love.graphics.getWidth() - 200
-    local y = love.graphics.getHeight() /2
+    local w = list.w/2-5
+    local refresh = Urutora.button({
+        text = 'Refresh',
+        x = list.x, y = list.y,
+        w = w, h = 40
+    }):action(function()
+        MapEditor:loadObjectList()
+    end)
+    local deselect = Urutora.button({
+        text = 'Deselect',
+        x = list.x+w+5, y = list.y,
+        w = w, h = 40
+    }):action(function()
+        self.selected:enable()
+        self.selected = nil
+    end)
+
+    local x = list.x
+    local y = list.y+50
     local panel = Urutora.panel({
         x = x, y = y,
         w = list.w, h = list.h,
@@ -71,9 +92,13 @@ function MapEditor:loadObjectList()
         panel:setScrollY(e.target.value)
     end)
 
+    self.urutora:add(refresh)
+    self.urutora:add(deselect)
     self.urutora:add(panel)
     self.urutora:add(slider)
 
+    self.refresh = refresh
+    self.deselect = deselect
     self.panel = panel
     self.slider = slider
     self.selected = nil
@@ -99,39 +124,41 @@ function MapEditor:enter()
 end
 
 function MapEditor:update(dt)
-    local veiwpoint = self.veiwpoint
+    local viewpoint = self.viewpoint
 
-    local dx, dy = 0, 0
-    if love.keyboard.isDown('d') then
-        dx = dx + 1
-    end
-    if love.keyboard.isDown('a') then
-        dx = dx - 1
-    end
+    if not mouseMoveMode then
+        local dx, dy = 0, 0
+        if love.keyboard.isDown('d') then
+            dx = dx + 1
+        end
+        if love.keyboard.isDown('a') then
+            dx = dx - 1
+        end
 
-    if love.keyboard.isDown('s') then
-        dy = dy + 1
-    end
-    if love.keyboard.isDown('w') then
-        dy = dy - 1
-    end
-    
-    if dx ~= 0 then
-        veiwpoint.x = veiwpoint.x + dx*50.0*dt
-    end
-    if dy ~= 0 then
-        veiwpoint.y = veiwpoint.y + dy*50.0*dt
-    end
+        if love.keyboard.isDown('s') then
+            dy = dy + 1
+        end
+        if love.keyboard.isDown('w') then
+            dy = dy - 1
+        end
+        
+        if dx ~= 0 then
+            viewpoint.x = viewpoint.x + dx*50.0*dt
+        end
+        if dy ~= 0 then
+            viewpoint.y = viewpoint.y + dy*50.0*dt
+        end
 
-    veiwpoint.x = math.clamp(veiwpoint.x, 400, self.width-400)
-    veiwpoint.y = math.clamp(veiwpoint.y, 300, self.height-300)
+        viewpoint.x = math.clamp(viewpoint.x, 400, self.width-400)
+        viewpoint.y = math.clamp(viewpoint.y, 300, self.height-300)
+    end
 
     local _, _, cw, ch = self.camera:getWorld()
     if self.width ~= cw or self.height ~= ch then
         self.camera:setWorld(0, 0, self.width, self.height)
     end
 
-    self.camera:setPosition(veiwpoint:unpack())
+    self.camera:setPosition(viewpoint:unpack())
     self.UI:update(dt)
     self.urutora:update(dt)
 end
@@ -184,16 +211,37 @@ function MapEditor:mousepressed( x, y, button, istouch, presses )
             self.selected.call(self.world, cx, cy, 100, 100)
         end
     end
+
+    if button == 3 then
+        mouseMoveMode = true
+    end
+
     -- self.UI:mousepressed(x, y, button, istouch, presses)
     self.urutora:pressed(x, y, button, istouch, presses)
 end
 
-function MapEditor:mousereleased(x, y, button) self.urutora:released(x, y) end
-function MapEditor:mousemoved(x, y, dx, dy) self.urutora:moved(x, y, dx, dy) end
-
-function MapEditor:wheelmoved( x, y )
-    self.urutora:wheelmoved(x, y)
+function MapEditor:mousereleased(x, y, button)
+    if button == 3 then
+        mouseMoveMode = false
+    end
+    self.urutora:released(x, y)
 end
+
+function MapEditor:mousemoved(x, y, dx, dy)
+    if mouseMoveMode then
+        local viewpoint = self.viewpoint+vector(-dx, -dy)
+
+        viewpoint.x = math.clamp(viewpoint.x, 400, self.width-400)
+        viewpoint.y = math.clamp(viewpoint.y, 300, self.height-300)
+
+        self.viewpoint = viewpoint
+        self.camera:setPosition(viewpoint:unpack())
+    end
+
+    self.urutora:moved(x, y, dx, dy)
+end
+
+function MapEditor:wheelmoved(x, y) self.urutora:wheelmoved(x, y) end
 
 function MapEditor:keypressed( key )
     if key == 'kp6' then
@@ -210,8 +258,10 @@ function MapEditor:keypressed( key )
         if self.height < 600 then
             self.height = 600
         end
-    -- elseif key == 'escape' then
-    --     Gamestate.pop()
+    elseif key == 'escape' then
+        self.selected:enable()
+        self.selected = nil
+        -- Gamestate.pop()
     elseif key == 'r' then
         self:loadObjectList()
     end
