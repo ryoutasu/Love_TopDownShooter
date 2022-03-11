@@ -25,12 +25,19 @@ function MapEditor:init()
     self.urutora = Urutora:new()
 end
 
+function MapEditor:deselect()
+    if self.selected then
+        self.selected:enable()
+        self.selected = nil
+    end
+end
+
 function MapEditor:loadObjectList()
     if self.panel then
         self.urutora:remove(self.panel)
         self.urutora:remove(self.slider)
-        self.urutora:remove(self.refresh)
-        self.urutora:remove(self.deselect)
+        self.urutora:remove(self.refreshBtn)
+        self.urutora:remove(self.deselectBtn)
     end
     local list = love.filesystem.load(objectListPath)()
 
@@ -44,7 +51,7 @@ function MapEditor:loadObjectList()
     end)
     local deselect = Urutora.button({
         text = 'Deselect',
-        x = list.x+w+5, y = list.y,
+        x = list.x+w+10, y = list.y,
         w = w, h = 40
     }):action(function()
         self.selected:enable()
@@ -97,8 +104,8 @@ function MapEditor:loadObjectList()
     self.urutora:add(panel)
     self.urutora:add(slider)
 
-    self.refresh = refresh
-    self.deselect = deselect
+    self.refreshBtn = refresh
+    self.deselectBtn = deselect
     self.panel = panel
     self.slider = slider
     self.selected = nil
@@ -259,8 +266,7 @@ function MapEditor:keypressed( key )
             self.height = 600
         end
     elseif key == 'escape' then
-        self.selected:enable()
-        self.selected = nil
+        self:deselect()
         -- Gamestate.pop()
     elseif key == 'r' then
         self:loadObjectList()
