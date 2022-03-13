@@ -13,3 +13,8 @@ end
 function drawOrder(a, b)
     return a:getDrawOrder() > b:getDrawOrder()
 end
+
+function isPointInside(x, y, x2, y2, w, h)
+    return (x > x2 and y > y2)
+        and (x < x2+w and y < y2+h)
+end

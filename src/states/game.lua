@@ -1,4 +1,3 @@
-Input = require 'lib.input'
 local Map = require 'src.map'
 local UI = require 'src.gameui'
 
