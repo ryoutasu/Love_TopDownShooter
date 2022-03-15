@@ -36,6 +36,11 @@ function Object:getDrawOrder()
     return self.drawOrder or 10000
 end
 
+function Object:setPosition(pos)
+    self.world:update(self, pos.x, pos.y)
+    self.pos = pos
+end
+
 function Object:destroy()
     if self.onDetroy then
         self:onDestroy()

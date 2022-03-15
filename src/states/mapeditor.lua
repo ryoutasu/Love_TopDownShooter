@@ -10,6 +10,8 @@ local objectListPath = 'resources/objectList.lua'
 local MapEditor = {}
 
 local mouseMoveMode = false
+local moveObjectByMouse = false
+local moveObjectOffset = vector(0, 0)
 local insidenode = false
 local widthText = nil
 local heightText = nil
@@ -58,6 +60,9 @@ function MapEditor:init()
     :setStyle({outlineColor = fgColor})
 
     self.urutora:add(panel)
+
+    self.objectUnderCursor = nil
+    self.selectedObject = nil
 end
 
 function MapEditor:resize(width, height)
@@ -70,11 +75,15 @@ function MapEditor:resize(width, height)
     heightText.text = tostring(height)
 end
 
-function MapEditor:deselect()
-    if self.selected then
-        self.selected:enable()
-        self.selected = nil
+function MapEditor:deselectNode()
+    if self.selectedNode then
+        self.selectedNode:enable()
+        self.selectedNode = nil
     end
+end
+
+function MapEditor:deselectObject()
+    self.selectedObject = nil
 end
 
 function MapEditor:loadObjectList()
@@ -99,7 +108,7 @@ function MapEditor:loadObjectList()
         x = list.x+w+10, y = list.y,
         w = w, h = 40
     }):action(function()
-        self:deselect()
+        self:deselectNode()
     end)
 
     local x = list.x
@@ -123,11 +132,12 @@ function MapEditor:loadObjectList()
             
             item.call = result()
             item:action(function(e)
-                if self.selected then
-                    self.selected:enable()
+                if self.selectedNode then
+                    self.selectedNode:enable()
                 end
                 item:disable()
-                self.selected = item
+                self.selectedNode = item
+                self.selectedObject = nil
             end)
             panel:addAt(i, 1, item)
             i = i + 1
@@ -152,8 +162,7 @@ function MapEditor:loadObjectList()
     self.deselectBtn = deselect
     self.panel = panel
     self.slider = slider
-    self.selected = nil
-    self.mouseOver = nil
+    self.selectedNode = nil
 end
 
 function MapEditor:save()
@@ -192,8 +201,15 @@ function MapEditor:update(dt)
         end
     end
     
+    local alreadyMouseOver = false -- check if no other object under cursor
+    local cx, cy = self.camera:toWorld(mx, my)
+    local items, len = self.world:queryRect(self.camera:getVisible())
+    self.objectUnderCursor = nil
     for _, item in ipairs(items) do
-
+        if not alreadyMouseOver and isPointInside(cx, cy, item.pos.x, item.pos.y, item.w, item.h) then
+            self.objectUnderCursor = item
+            alreadyMouseOver = true
+        end
     end
 
     self.camera:setPosition(viewpoint:unpack())
@@ -221,25 +237,30 @@ function MapEditor:drawWorld(alpha)
 end
 
 function MapEditor:draw()
-    local mx, my = love.mouse.getPosition()
-    local cx, cy = self.camera:toWorld(mx, my)
-
     self.camera:draw(function (x,y,w,h)
         self:drawWorld()
         local items, len = self.world:queryRect(x, y, w, h)
         table.sort(items, drawOrder)
 
-        local alreadyMouseOver = false -- check if no other object under cursor
         for _, item in ipairs(items) do
             item:draw()
-            if not insidenode then
-                if not alreadyMouseOver
-                and isPointInside(cx, cy, item.pos.x, item.pos.y, item.w, item.h) then
-                    alreadyMouseOver = true
-                    love.graphics.setColor(0, 0, 1, 1)
-                    love.graphics.rectangle('line', item.pos.x, item.pos.y, item.w, item.h)
+            
+            local color = { 0.8, 0.8, 0.8, 0.5 }
+            if not insidenode and item == self.objectUnderCursor then
+                if item == self.selectedObject then
+                    if moveObjectByMouse then
+                        color = { 1, 0, 0, 1 }
+                    else
+                        color = { 0.1, 1, 0.2, 1 }
+                    end
+                else
+                    color = { 0, 0, 1, 1 }
                 end
+            elseif item == self.selectedObject then
+                color = { 0.7, 0.7, 0, 1 }
             end
+            love.graphics.setColor(color)
+            love.graphics.rectangle('line', item.pos.x, item.pos.y, item.w, item.h)
         end
     end)
 
@@ -250,13 +271,15 @@ end
 function MapEditor:mousepressed( x, y, button, istouch, presses )
     local cx, cy = self.camera:toWorld(x, y)
     if button == 1 then
-        if self.selected and not insidenode then
-            self.selected.call(self.world, cx, cy, 100, 100)
+        if self.selectedNode and not insidenode then
+            self.selectedNode.call(self.world, cx, cy, 100, 100)
         end
 
-        -- if not self.selected and  then
-            
-        -- end
+        if not self.selectedNode and self.objectUnderCursor then
+            self.selectedObject = self.objectUnderCursor
+            moveObjectByMouse = true
+            moveObjectOffset = self.selectedObject.pos-vector(cx, cy)
+        end
     end
 
     if button == 3 then
@@ -266,6 +289,11 @@ function MapEditor:mousepressed( x, y, button, istouch, presses )
 end
 
 function MapEditor:mousereleased(x, y, button)
+    if button == 1 then
+        -- if self.objectUnderCursor then
+            moveObjectByMouse = false
+        -- end
+    end
     if button == 3 then
         mouseMoveMode = false
     end
@@ -283,6 +311,12 @@ function MapEditor:mousemoved(x, y, dx, dy)
         self.camera:setPosition(viewpoint:unpack())
     end
 
+    if self.selectedObject and moveObjectByMouse then
+        local wx, wy = self.camera:toWorld(x, y)
+        -- self.selectedObject.pos = vector(wx, wy)+moveObjectOffset
+        self.selectedObject:setPosition(vector(wx, wy)+moveObjectOffset)
+    end
+
     self.urutora:moved(x, y, dx, dy)
 end
 
@@ -290,7 +324,8 @@ function MapEditor:wheelmoved(x, y) self.urutora:wheelmoved(x, y) end
 
 function MapEditor:keypressed(key, scancode, isrepeat)
     if key == 'escape' then
-        self:deselect()
+        self:deselectNode()
+        self:deselectObject()
         -- Gamestate.pop()
     end
     self.urutora:keypressed(key, scancode, isrepeat)

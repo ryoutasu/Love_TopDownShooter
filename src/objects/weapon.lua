@@ -17,7 +17,8 @@ function Weapon:init(player, name, camera)
     self:include(wep)
     self.sprite = self.imagePath and Sprite(self.imagePath) or nil
 
-    self.pos = player.pos + player.hand_point
+    -- self.pos = player.pos + player.hand_point
+    self.pos = player:getCenter()
     self.w = self.sprite.w
     self.h = self.sprite.h
     -- self.ox = self.holding_point.x
@@ -153,6 +154,10 @@ function Weapon:draw()
     end
 
     self:drawUI()
+end
+
+function Weapon:setPosition(pos)
+    self.pos = self.player:getCenter()
 end
 
 return Weapon

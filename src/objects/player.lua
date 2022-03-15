@@ -165,4 +165,11 @@ function Player:keypressed(key)
     end
 end
 
+local setPos = Player.setPosition
+function Player:setPosition(pos)
+    -- Unit.setPosition(self, pos)
+    setPos(self, pos)
+    self.weaponList[self.weapon]:setPosition(pos)
+end
+
 return Player
