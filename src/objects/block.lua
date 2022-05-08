@@ -12,8 +12,8 @@ end
 --     return 'touch'
 -- end
 
-function Block:draw()
-    love.graphics.setColor(0.3, 0.3, 0.3, 1)
+function Block:draw(alpha)
+    love.graphics.setColor(0.3, 0.3, 0.3, alpha)
     love.graphics.rectangle('fill', self.pos.x, self.pos.y, self.w, self.h)
     Object.draw(self)
 end

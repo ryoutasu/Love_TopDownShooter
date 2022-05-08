@@ -139,11 +139,11 @@ function Weapon:drawUI()
     love.graphics.print(self.bulletsInClip..' / '..self.totalAmmo, pos.x, pos.y - 25)
 end
 
-function Weapon:draw()
+function Weapon:draw(alpha)
     if self.sprite then
         local pos, r, sx, sy, ox, oy = self.pos, self.r or 0, self.scale, self.scale, self.ox, self.oy
         self.sprite.flippedV = self.flippedV
-        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setColor(1, 1, 1, alpha)
         self.sprite:draw(nil, pos.x, pos.y, r, sx, sy, ox, oy)
     end
 

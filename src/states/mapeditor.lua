@@ -75,10 +75,22 @@ function MapEditor:resize(width, height)
     heightText.text = tostring(height)
 end
 
+function MapEditor:callNode()
+    if self.placingObjectCall then
+        local cx, cy = self.camera:toWorld(love.mouse.getPosition())
+        self.placingObject = self.placingObjectCall(self.world, cx, cy, 100, 100)
+        
+        local object = self.placingObject
+        local offset = vector(object.w/2, object.h/2)
+        object:setPosition(vector(cx, cy)-offset)
+    end
+end
+
 function MapEditor:deselectNode()
-    if self.selectedNode then
-        self.selectedNode:enable()
-        self.selectedNode = nil
+    if self.placingObject then
+        self.world:remove(self.placingObject)
+        self.placingObject = nil
+        self.placingObjectCall = nil
     end
 end
 
@@ -87,6 +99,8 @@ function MapEditor:deselectObject()
 end
 
 function MapEditor:loadObjectList()
+    self:deselectObject()
+    self:deselectNode()
     if self.panel then
         self.urutora:remove(self.panel)
         self.urutora:remove(self.slider)
@@ -129,15 +143,12 @@ function MapEditor:loadObjectList()
                 text = value.name,
                 w = 200, h = 30
             })
-            
-            item.call = result()
+
             item:action(function(e)
-                if self.selectedNode then
-                    self.selectedNode:enable()
-                end
-                item:disable()
-                self.selectedNode = item
-                self.selectedObject = nil
+                self:deselectObject()
+                self:deselectNode()
+                self.placingObjectCall = result()
+                self:callNode()
             end)
             panel:addAt(i, 1, item)
             i = i + 1
@@ -162,7 +173,8 @@ function MapEditor:loadObjectList()
     self.deselectBtn = deselect
     self.panel = panel
     self.slider = slider
-    self.selectedNode = nil
+    self.placingObject = nil
+    self.placingObjectCall = nil
 end
 
 function MapEditor:save()
@@ -243,24 +255,28 @@ function MapEditor:draw()
         table.sort(items, drawOrder)
 
         for _, item in ipairs(items) do
-            item:draw()
+            local alpha = 1
+            if self.placingObject == item then
+                alpha = 0.5
+            end
+            item:draw(alpha)
             
-            local color = { 0.8, 0.8, 0.8, 0.5 }
-            if not insidenode and item == self.objectUnderCursor then
+            local color = { 0.5, 0.5, 0.5, 0.75 }
+            if not self.placingObject and not insidenode and item == self.objectUnderCursor then
                 if item == self.selectedObject then
                     if moveObjectByMouse then
-                        color = { 1, 0, 0, 1 }
+                        color = { 1, 1, 0, 1 }
                     else
-                        color = { 0.1, 1, 0.2, 1 }
+                        color = { 0, 1, 0, 1 }
                     end
                 else
-                    color = { 0, 0, 1, 1 }
+                    color = { 0.9, 0.9, 0.9, 1 }
                 end
             elseif item == self.selectedObject then
-                color = { 0.7, 0.7, 0, 1 }
+                color = { 0, 0.65, 0, 0.75 }
             end
             love.graphics.setColor(color)
-            love.graphics.rectangle('line', item.pos.x, item.pos.y, item.w, item.h)
+            love.graphics.rectangle('line', item.pos.x+1, item.pos.y+1, item.w-2, item.h-2)
         end
     end)
 
@@ -271,15 +287,20 @@ end
 function MapEditor:mousepressed( x, y, button, istouch, presses )
     local cx, cy = self.camera:toWorld(x, y)
     if button == 1 then
-        if self.selectedNode and not insidenode then
-            self.selectedNode.call(self.world, cx, cy, 100, 100)
-        end
-
-        if not self.selectedNode and self.objectUnderCursor then
+        if not self.placingObject and self.objectUnderCursor then
             self.selectedObject = self.objectUnderCursor
             moveObjectByMouse = true
             moveObjectOffset = self.selectedObject.pos-vector(cx, cy)
         end
+
+        if self.placingObject and not insidenode then
+            self:callNode()
+        end
+    end
+
+    if button == 2 then
+        self:deselectNode()
+        self:deselectObject()
     end
 
     if button == 3 then
@@ -290,9 +311,7 @@ end
 
 function MapEditor:mousereleased(x, y, button)
     if button == 1 then
-        -- if self.objectUnderCursor then
-            moveObjectByMouse = false
-        -- end
+        moveObjectByMouse = false
     end
     if button == 3 then
         mouseMoveMode = false
@@ -313,8 +332,14 @@ function MapEditor:mousemoved(x, y, dx, dy)
 
     if self.selectedObject and moveObjectByMouse then
         local wx, wy = self.camera:toWorld(x, y)
-        -- self.selectedObject.pos = vector(wx, wy)+moveObjectOffset
         self.selectedObject:setPosition(vector(wx, wy)+moveObjectOffset)
+    end
+
+    if self.placingObject then
+        local object = self.placingObject
+        local offset = vector(object.w/2, object.h/2)
+        local wx, wy = self.camera:toWorld(x, y)
+        object:setPosition(vector(wx, wy)-offset)
     end
 
     self.urutora:moved(x, y, dx, dy)
@@ -326,7 +351,11 @@ function MapEditor:keypressed(key, scancode, isrepeat)
     if key == 'escape' then
         self:deselectNode()
         self:deselectObject()
-        -- Gamestate.pop()
+    elseif key == 'backspace' or key == 'delete' then
+        if self.selectedObject then
+            self.world:remove(self.selectedObject)
+            self:deselectObject()
+        end
     end
     self.urutora:keypressed(key, scancode, isrepeat)
 end

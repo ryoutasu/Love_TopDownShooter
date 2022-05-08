@@ -106,53 +106,53 @@ function Player:updateVelocityByInput(dt)
     end
 end
 
--- function Player:updateInput()
---     local i = Input
+function Player:updateInput()
+    local i = Input
 
---     if i.pressed('r') then
---         self.weaponList[self.weapon]:reload()
---     end
+    if i.pressed('r') then
+        self.weaponList[self.weapon]:reload()
+    end
 
---     for k = 1, 9 do
---         if i.pressed(tostring(k)) then
---             self:changeWeapon(k)
---         end
---     end
+    for k = 1, 9 do
+        if i.pressed(tostring(k)) then
+            self:changeWeapon(k)
+        end
+    end
 
---     if i.pressed('mouse1') then
---         self:startFire(true)
---     end
---     if i.released('mouse1') then
---         self:startFire(false)
---     end
+    if i.pressed('mouse1') then
+        self:startFire(true)
+    end
+    if i.released('mouse1') then
+        self:startFire(false)
+    end
 
---     local is_down, wy = i.pressed('wheely')
---     if is_down then
---         if wy > 0 then
---             self:nextWeapon(false)
---         elseif wy < 0 then
---             self:nextWeapon(true)
---         end
---     end
--- end
+    local is_down, wy = i.pressed('wheely')
+    if is_down then
+        if wy > 0 then
+            self:nextWeapon(false)
+        elseif wy < 0 then
+            self:nextWeapon(true)
+        end
+    end
+end
 
 function Player:update(dt)
     self:updateVelocityByInput(dt)
     Unit.update(self, dt)
-    -- self:updateInput()
+    self:updateInput()
     self.weaponList[self.weapon]:update(dt)
 end
 
-function Player:draw()
+function Player:draw(alpha)
     local weapon = self.weaponList[self.weapon]
     if weapon.r < 0 then
-        weapon:draw()
-        love.graphics.setColor(1, 1, 1, 1)
+        weapon:draw(alpha)
+        love.graphics.setColor(1, 1, 1, alpha)
         Unit.draw(self)
     else
-        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setColor(1, 1, 1, alpha)
         Unit.draw(self)
-        weapon:draw()
+        weapon:draw(alpha)
     end
 end
 
