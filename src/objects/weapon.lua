@@ -124,21 +124,6 @@ function Weapon:update(dt)
     self:updateFiring(dt)
 end
 
-function Weapon:drawUI()
-    local player = self.player
-    local pos = player.pos
-
-    if self.reloadTime > 0 then
-        love.graphics.setColor(0.4, 0.4, 0.4, 1)
-        love.graphics.rectangle('fill', pos.x, pos.y - 10, player.w, 3)
-        love.graphics.setColor(1, 0.5, 0, 1)
-        love.graphics.rectangle('fill', pos.x, pos.y - 10, player.w*(1-(self.reloadTime/self.timeToReload)), 3)
-    end
-
-    love.graphics.setColor(0, 0, 0, 1)
-    love.graphics.print(self.bulletsInClip..' / '..self.totalAmmo, pos.x, pos.y - 25)
-end
-
 function Weapon:draw(alpha)
     if self.sprite then
         local pos, r, sx, sy, ox, oy = self.pos, self.r or 0, self.scale, self.scale, self.ox, self.oy
@@ -152,8 +137,6 @@ function Weapon:draw(alpha)
         love.graphics.setColor(1, 0, 0, 1)
         love.graphics.circle('fill', pos.x, pos.y, 2)
     end
-
-    self:drawUI()
 end
 
 function Weapon:setPosition(pos)

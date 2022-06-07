@@ -1,4 +1,5 @@
 local gamera = require 'lib.gamera'
+local vector = require 'lib.vector'
 
 local UI = Class{}
 
@@ -33,8 +34,21 @@ function UI:draw()
 
     local map = self.map
     local player = self.player
+    local camera = player.camera
     -- local health, maxHealth
     local weapons = player.weaponList
+    local weapon = weapons[player.weapon]
+    local pos = vector(camera:toScreen(player.pos:unpack()))
+
+    if weapon.reloadTime > 0 then
+        love.graphics.setColor(0.4, 0.4, 0.4, 1)
+        love.graphics.rectangle('fill', pos.x, pos.y - 10, player.w, 3)
+        love.graphics.setColor(1, 0.5, 0, 1)
+        love.graphics.rectangle('fill', pos.x, pos.y - 10, player.w*(1-(weapon.reloadTime/weapon.timeToReload)), 3)
+    end
+
+    love.graphics.setColor(0, 0, 0, 1)
+    love.graphics.print(weapon.bulletsInClip..' / '..weapon.totalAmmo, pos.x, pos.y - 25)
     
     -- WEAPON LIST
     local x = love.graphics.getWidth() - 100
