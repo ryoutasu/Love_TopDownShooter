@@ -17,18 +17,20 @@ local widthText = nil
 local heightText = nil
 
 local fgColor = {0,0,0,1}
-
+local clampX, clampY = 400, 300
 
 function MapEditor:init()
-    local width, height = 1000, 1000
+    clampX = love.graphics.getWidth()/2
+    clampY = love.graphics.getHeight()/2
+    local width, height = 2000, 2000
     local world = bump.newWorld()
-    local camera = gamera.new(0,0,1000,1000)
+    local camera = gamera.new(0,0,2000,2000)
 
     self.camera = camera
     self.width, self.height = width, height
 
     self.world = world
-    self.viewpoint = vector(400, 300)
+    self.viewpoint = vector(clampX, clampY)
 
     self.UI = UI(self)
     self.urutora = Urutora:new()
@@ -78,11 +80,11 @@ end
 function MapEditor:callNode()
     if self.placingObjectCall then
         local cx, cy = self.camera:toWorld(love.mouse.getPosition())
-        self.placingObject = self.placingObjectCall(self.world, cx, cy, 100, 100)
-        
-        local object = self.placingObject
+        local object = self.placingObjectCall(self.world, cx, cy, unpack(self.placingObjectParms))
         local offset = vector(object.w/2, object.h/2)
         object:setPosition(vector(cx, cy)-offset)
+
+        self.placingObject = object
     end
 end
 
@@ -148,7 +150,9 @@ function MapEditor:loadObjectList()
                 self:deselectObject()
                 self:deselectNode()
                 self.placingObjectCall = result()
+                self.placingObjectParms = value.parms
                 self:callNode()
+                self:showParameters()
             end)
             panel:addAt(i, 1, item)
             i = i + 1
@@ -175,6 +179,56 @@ function MapEditor:loadObjectList()
     self.slider = slider
     self.placingObject = nil
     self.placingObjectCall = nil
+end
+
+function MapEditor:showParameters()
+    if self.parmsPanel then
+        self.urutora:remove(self.parmsPanel)
+        self.urutora:remove(self.paramBtn)
+    end
+
+    if not self.placingObjectParms then
+        return
+    end
+
+    local x = self.panel.x
+    local y = self.panel.y + self.panel.w - 75
+    local w = self.panel.w + 25
+    local h = love.graphics.getHeight() - y - 25
+
+    local panel = Urutora.panel({
+        x = x, y = y,
+        w = w, h = h,
+        rows = self.panel.rows, cols = 1, csy = self.panel.csy
+    })
+    --local i = 1
+    if self.placingObjectParms then
+        for index, value in ipairs(self.placingObjectParms) do
+            local p = Urutora.text({
+                text = type(value) == "number" and tostring(value) or value
+            })
+            panel:addAt(index, 1, p)
+            --i = i + 1
+        end
+    end
+
+    local paramBtn = Urutora.button({
+        x = x + 20, y = y + 20,
+        w = w - 40, h = 20,
+        text = 'Set parms'
+    }):action(function()
+        if self.placingObjectParms then
+            for index, value in ipairs(self.placingObjectParms) do
+                local p = panel:getChildren(index, 1)
+                self.placingObjectParms[index] = type(value) == "number" and tonumber(p.text) or p.text
+            end
+        end
+    end)
+
+    self.urutora:add(panel)
+    self.urutora:add(paramBtn)
+    self.parmsPanel = panel
+    self.parmsBtn = paramBtn
 end
 
 function MapEditor:save()
@@ -287,14 +341,16 @@ end
 function MapEditor:mousepressed( x, y, button, istouch, presses )
     local cx, cy = self.camera:toWorld(x, y)
     if button == 1 then
-        if not self.placingObject and self.objectUnderCursor then
-            self.selectedObject = self.objectUnderCursor
-            moveObjectByMouse = true
-            moveObjectOffset = self.selectedObject.pos-vector(cx, cy)
-        end
+        if not insidenode then
+            if not self.placingObject and self.objectUnderCursor then
+                self.selectedObject = self.objectUnderCursor
+                moveObjectByMouse = true
+                moveObjectOffset = self.selectedObject.pos-vector(cx, cy)
+            end
 
-        if self.placingObject and not insidenode then
-            self:callNode()
+            if self.placingObject then
+                self:callNode()
+            end
         end
     end
 
@@ -323,8 +379,8 @@ function MapEditor:mousemoved(x, y, dx, dy)
     if mouseMoveMode then
         local viewpoint = self.viewpoint+vector(-dx, -dy)
 
-        viewpoint.x = math.clamp(viewpoint.x, 400, self.width-400)
-        viewpoint.y = math.clamp(viewpoint.y, 300, self.height-300)
+        viewpoint.x = math.clamp(viewpoint.x, clampX, self.width-clampX)
+        viewpoint.y = math.clamp(viewpoint.y, clampY, self.height-clampY)
 
         self.viewpoint = viewpoint
         self.camera:setPosition(viewpoint:unpack())
@@ -356,6 +412,8 @@ function MapEditor:keypressed(key, scancode, isrepeat)
             self.world:remove(self.selectedObject)
             self:deselectObject()
         end
+    elseif key == 'r' then
+        self:loadObjectList()
     end
     self.urutora:keypressed(key, scancode, isrepeat)
 end

@@ -2,16 +2,14 @@ local gamera = require 'lib.gamera'
 
 local UI = Class{}
 
-local PX_TO_ROW = 20
-local ACTIVE_OBJECT_TEXT_COLOR = { 0, 0, 0, 1 }
-local INACTIVE_OBJECT_TEXT_COLOR = { 0.5, 0.5, 0.5, 1 }
-
 local minimapScale = 0.2
 function UI:init(state)
     self.state = state
 
+    local windowW, windowH = love.graphics.getWidth(), love.graphics.getHeight()
+    local w, h = 200, 200
     self.minimap = gamera.new(0,0,state.width, state.height)
-    self.minimap:setWindow(575, 25, 200, 200)
+    self.minimap:setWindow(windowW - w - 25, 25, w, h)
     self.minimap:setScale(minimapScale)
 
     -- self.UI = Urutora:new()
@@ -34,22 +32,6 @@ function UI:draw()
     love.graphics.print('Map editor state', 0, 0)
     love.graphics.print('Width = '..self.state.width, 0, 15)
     love.graphics.print('Height = '..self.state.height, 0, 30)
-
-    -- OBJECT LIST
-    -- local objList = state.objectList
-    -- local x = love.graphics.getWidth() - 100
-    -- local y = love.graphics.getHeight() - PX_TO_ROW*#objList
-    -- local textColor
-    -- for i, obj in ipairs(objList) do
-    --     if state.selectedObject == i then
-    --         textColor = ACTIVE_OBJECT_TEXT_COLOR
-    --     else
-    --         textColor = INACTIVE_OBJECT_TEXT_COLOR
-    --     end
-    --     love.graphics.setColor(textColor)
-    --     love.graphics.print(obj.name, x, y, 0, 1.5)
-    --     y = y + PX_TO_ROW
-    -- end
 
     -- MINIMAP
     local l,r,t,d = state.camera:getVisible()

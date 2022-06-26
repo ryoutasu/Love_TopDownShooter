@@ -11,6 +11,7 @@ game = require 'src.states.game'
 editor = require 'src.states.mapeditor'
 
 function love.load()
+    love.window.setMode(1280, 720)
     Input.bind_callbacks()
     love.graphics.setDefaultFilter( 'nearest', 'nearest' )
     love.window.setTitle('Love Shooter')
